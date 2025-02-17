@@ -1,23 +1,17 @@
-#define LIS3MDL 3
-#define MLX90393 90393
-#define MMC5603 5603
-#define MMC5983MA 5983
-#define SENSOR MMC5983MA
-
 #include <Arduino.h>
 #include <Comp6DOF_n0m1.h>
 Comp6DOF_n0m1 sixDOF;
 
-#if SENSOR == LIS3MDL
+#ifdef LIS3MDL
 #include <Adafruit_LIS3MDL.h>
 Adafruit_LIS3MDL lis3mdl;
-#elif SENSOR == MLX90393
-#include <Adafruit_MLX90393.h>
-Adafruit_MLX90393 mlx90393;
-#elif SENSOR == MMC5603
+#elifdef MLX90393
+#include <Adafruit_MLX90393_RAW.h>
+Adafruit_MLX90393_RAW mlx90393;
+#elifdef MMC5603
 #include <Adafruit_MMC56x3_RAW.h>
 Adafruit_MMC5603_RAW mmc5603;
-#elif SENSOR == MMC5983MA
+#elifdef MMC5983MA
 #include <SparkFun_MMC5983MA_Arduino_Library.h>
 #include <Wire.h>
 #define MMC5983MA_MODE_BITS 18
@@ -32,7 +26,7 @@ void setup() {
 	Serial.println("Hello World");
 
 	// connect sensor:
-#if SENSOR == LIS3MDL
+#ifdef LIS3MDL
 	if (!lis3mdl.begin_I2C()) {
 		Serial.println("Failed to find LIS3MDL chip");
 		while (true) {
@@ -40,7 +34,7 @@ void setup() {
 		}
 	}
 	Serial.println("LIS3MDL Found!");
-#elif SENSOR == MLX90393
+#elifdef MLX90393
 	if (!mlx90393.begin_I2C(0x18)) {
 		Serial.println(": Failed to find MLX90393 chip");
 		while (true) {
@@ -48,7 +42,7 @@ void setup() {
 		}
 	}
 	Serial.println("MLX90393 Found!");
-#elif SENSOR == MMC5603
+#elifdef MMC5603
 	if (!mmc5603.begin(MMC56X3_DEFAULT_ADDRESS, &Wire)) {
 		Serial.println("Failed to find MMC5603 chip");
 		while (true) {
@@ -56,7 +50,7 @@ void setup() {
 		}
 	}
 	Serial.println("MMC5603 Found!");
-#elif SENSOR == MMC5983MA
+#elifdef MMC5983MA
 	Wire.begin();
 	if (!mmc5983ma.begin()) {
 		Serial.println("Failed to find MMC5983MA chip");
@@ -68,7 +62,7 @@ void setup() {
 #endif
 
 	// configure sensor
-#if SENSOR == LIS3MDL
+#ifdef LIS3MDL
 	lis3mdl.setPerformanceMode(LIS3MDL_MEDIUMMODE);
 	Serial.print("Performance mode set to: ");
 	switch (lis3mdl.getPerformanceMode()) {
@@ -120,7 +114,7 @@ void setup() {
 		//                         true, // polarity
 		//                         false, // don't latch
 		//                         true); // enabled!
-#elif SENSOR == MLX90393
+#elifdef MLX90393
 	mlx90393.setGain(MLX90393_GAIN_1X);
 	Serial.print("Gain set to: ");
 	switch (mlx90393.getGain()) {
@@ -185,7 +179,7 @@ void setup() {
 		case MLX90393_FILTER_1: Serial.println("1");
 		case MLX90393_FILTER_0: Serial.println("0");
 	}
-#elif SENSOR == MMC5603
+#elifdef MMC5603
 	mmc5603.printSensorDetails();
 
 	mmc5603.setDataRate(100);
@@ -195,7 +189,7 @@ void setup() {
 	mmc5603.setContinuousMode(true);
 	Serial.print("Continuous Mode set to: ");
 	Serial.println("true");
-#elif SENSOR == MMC5983MA
+#elifdef MMC5983MA
 	mmc5983ma.setFilterBandwidth(100);
 	Serial.print("Filter Bandwidth set to: ");
 	Serial.println(mmc5983ma.getFilterBandwidth());
@@ -214,23 +208,24 @@ void setup() {
 #endif
 
 		// hard-iron calibrate sensor
-#if SENSOR == MMC5983MA
-		// do {
-		//	uint32_t x_value = 0, y_value = 0, z_value = 0;
-		//	do {
-		//		delay(50);
-		//		mmc5983ma.readFieldsXYZ(&x_value, &y_value, &z_value);
-		//	} while (!sixDOF.deviantSpread(static_cast<int>(x_value) - (1 << MMC5983MA_MODE_BITS - 1), static_cast<int>(y_value) - (1 << MMC5983MA_MODE_BITS - 1), static_cast<int>(z_value) - (1 << MMC5983MA_MODE_BITS - 1)));
-		// } while (!sixDOF.calOffsets());
+#ifdef MMC5983MA
+	do {
+		uint32_t x_value = 0, y_value = 0, z_value = 0;
+		do {
+			delay(50);
+			mmc5983ma.readFieldsXYZ(&x_value, &y_value, &z_value);
+		} while (!sixDOF.deviantSpread(static_cast<int>(x_value) - (1 << MMC5983MA_MODE_BITS - 1), static_cast<int>(y_value) - (1 << MMC5983MA_MODE_BITS - 1), static_cast<int>(z_value) - (1 << MMC5983MA_MODE_BITS - 1)));
+		Serial.println("MMC5983MA read fields until deviantSpread!");
+	} while (!sixDOF.calOffsets());
 
-#elif SENSOR == LIS3MDL
+#elifdef LIS3MDL
 		// do {
 		//	do {
 		//		delay(50);
 		//		lis3mdl.read();
 		//	} while (!sixDOF.deviantSpread(lis3mdl.x, lis3mdl.y, lis3mdl.z));
 		// } while (!sixDOF.calOffsets());
-#elif SENSOR == MLX90393
+#elifdef MLX90393
 	// do {
 	//	int16_t x_value = 0, y_value = 0, z_value = 0;
 	//	do {
@@ -238,7 +233,7 @@ void setup() {
 	//		mlx90393.readRawData(&x_value, &y_value, &z_value);
 	//	} while (!sixDOF.deviantSpread(x_value, y_value, z_value));
 	// } while (!sixDOF.calOffsets());
-#elif SENSOR == MMC5603
+#elifdef MMC5603
 	// do {
 	//	int32_t x_value = 0, y_value = 0, z_value = 0;
 	//	do {
@@ -247,18 +242,17 @@ void setup() {
 	//	} while (!sixDOF.deviantSpread(x_value, y_value, z_value));
 	// } while (!sixDOF.calOffsets());
 #endif
-
-	// Serial.print("\tXoff: ");
-	// Serial.print(sixDOF.xHardOff());
-	// Serial.print(" \tYoff: ");
-	// Serial.print(sixDOF.yHardOff());
-	// Serial.print(" \tZoff: ");
-	// Serial.print(sixDOF.zHardOff());
-	// Serial.println("");
+	Serial.print("\tXoff: ");
+	Serial.print(sixDOF.xHardOff());
+	Serial.print(" \tYoff: ");
+	Serial.print(sixDOF.yHardOff());
+	Serial.print(" \tZoff: ");
+	Serial.print(sixDOF.zHardOff());
+	Serial.println("");
 }
 
 void loop() {
-#if SENSOR == MMC5983MA
+#ifdef MMC5983MA
 	// TODO: check if new measurement is available
 	uint32_t x_value = 0, y_value = 0, z_value = 0;
 	mmc5983ma.readFieldsXYZ(&x_value, &y_value, &z_value);  // 18bit Operation
@@ -274,11 +268,11 @@ void loop() {
 #else
 	// Get a new sensor event, normalized to uTesla
 	sensors_event_t event;
-#if SENSOR == LIS3MDL
+#ifdef LIS3MDL
 	lis3mdl.getEvent(&event);
-#elif SENSOR == MLX90393
+#elifdef MLX90393
 	mlx90393.getEvent(&event);
-#elif SENSOR == MMC5603
+#elifdef MMC5603
 	mmc5603.getEvent(&event);
 #endif
 
