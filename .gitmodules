@@ -1,0 +1,9 @@
+[submodule "thirdparty/magnetometer_calibration"]
+	path = thirdparty/magnetometer_calibration
+	url = https://github.com/nliaudat/magnetometer_calibration.git
+[submodule "thirdparty/common"]
+	path = thirdparty/common
+	url = https://github.com/sneakyHulk/common.git
+[submodule "thirdparty/concurra"]
+	path = thirdparty/concurra
+	url = https://github.com/sneakyHulk/concurra.git
