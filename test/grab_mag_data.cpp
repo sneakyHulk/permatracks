@@ -5,12 +5,21 @@
 #include <boost/circular_buffer.hpp>
 #include <boost/regex.hpp>
 #include <chrono>
+#include <fstream>
 
 struct MagneticFluxDensityData {
 	float x;
 	float y;
 	float z;
 };
+
+std::ostream& operator<<(std::ostream& os, MagneticFluxDensityData const& d) {
+	os << d.x << "," << d.y << "," << d.z;
+
+	return os;
+}
+
+#include <common_output.h>
 
 template <typename Type>
 class SerialConnection : public Pusher<Type> {
@@ -29,7 +38,6 @@ class SerialConnection : public Pusher<Type> {
 	Type push() override {
 		static boost::regex const mag_data_regex(R"(X: (-?[0-9]+\.[0-9]+) \tY: (-?[0-9]+\.[0-9]+) \tZ: (-?[0-9]+\.[0-9]+) uTesla)");
 		static std::array<char, 256> buf;
-		// std::sscanf(buffer.substr(0, bytes_transferred).c_str(), " X: %f  Y: %f  Z:  %f  ", &data.x, &data.y, &data.z) == 3
 
 		boost::match_results<boost::circular_buffer<char>::const_iterator> mag_data_match;
 		boost::match_flag_type flags = boost::match_default;
@@ -38,7 +46,7 @@ class SerialConnection : public Pusher<Type> {
 			buffer.insert(buffer.end(), buf.begin(), buf.begin() + bytes_transferred);
 
 			if (ec) {
-				std::cerr << "Error: " << ec.message() << std::endl;
+				common::println_critical_loc(ec.message());
 			}
 		} while (!boost::regex_search(buffer.cbegin(), buffer.cend(), mag_data_match, mag_data_regex));
 
@@ -64,23 +72,40 @@ class Printer : public RunnerSynchronous<MagneticFluxDensityData> {
 		std::chrono::duration<double> diff = now - timestamp;
 		timestamp = now;
 
-		std::cout << 1 / diff.count() << "hz " << data.x << ", " << data.y << ", " << data.z << std::endl;
+		std::cout << 1 / diff.count() << "hz ";
+
+		std::cout << data.x << ", " << data.y << ", " << data.z << std::endl;
 	}
+};
+
+class FilePrinter : public RunnerSynchronous<MagneticFluxDensityData> {
+	std::ofstream file;
+
+   public:
+	FilePrinter()
+	    : file(std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / [] {
+		      auto const created = std::chrono::zoned_time{std::chrono::current_zone(), std::chrono::system_clock::now()}.get_local_time();
+		      auto const day = std::chrono::floor<std::chrono::days>(created);
+		      auto const second = std::chrono::floor<std::chrono::seconds>(created - day);
+		      std::chrono::hh_mm_ss const hms{second};
+		      std::chrono::year_month_day const ymd{day};
+		      return common::stringprint("mag_data_", ymd.year(), ymd.month(), ymd.day(), '_', hms.hours(), hms.minutes(), hms.seconds());
+	      }()) {}
+
+	void run(MagneticFluxDensityData const& data) override { file << data << std::endl; }
 };
 
 int main() {
 	boost::asio::io_service io_service;
 
-	// std::regex mag_data_regex(R"(X: (-?[0-9]+\.[0-9]+) \tY: (-?[0-9]+\.[0-9]+) \tZ: (-?[0-9]+\.[0-9]+) uTesla)");
-
+	FilePrinter file_printer;
 	SerialConnection<MagneticFluxDensityData> conn(io_service, "/dev/ttyACM0", 115200);
 	Printer printer;
 
 	conn.synchronously_connect(printer);
+	conn.synchronously_connect(file_printer);
 
 	auto conn_thread = conn();
-
-	// io_service.run_for(std::chrono::seconds(100));
 
 	std::this_thread::sleep_for(std::chrono::seconds(100));
 }
