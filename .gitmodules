@@ -7,3 +7,6 @@
 [submodule "thirdparty/concurra"]
 	path = thirdparty/concurra
 	url = https://github.com/sneakyHulk/concurra.git
+[submodule "thirdparty/matplotlibcpp17"]
+	path = thirdparty/matplotlibcpp17
+	url = https://github.com/soblin/matplotlibcpp17.git
