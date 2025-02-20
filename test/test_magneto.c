@@ -35,6 +35,7 @@ static void Calculate_Eigenvectors(double *, double *, double[], double[], int);
 static void Complex_Division(double, double, double, double, double *, double *);
 void Transpose_Square_Matrix(double *, int);
 
+// adapted from https://sites.google.com/view/sailboatinstruments1/a-download-magneto-v1-2
 int main(int argc, char **argv) {
 	if (argc != 3) {
 		printf("Usage: test_magneto <input_file> <norm of the earth magnetic field of place of the measurements>\n");

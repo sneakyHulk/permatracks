@@ -18,6 +18,7 @@ std::generator<std::tuple<double, double, double>> file_mag_data_generator(std::
 	}
 }
 
+// see paper: Qingde Li and J. G. Griffiths, "Least squares ellipsoid specific fitting," Geometric Modeling and Processing, 2004. Proceedings, Beijing, China, 2004, pp. 335-340, doi: 10.1109/GMAP.2004.1290055.
 Eigen::Vector<double, 10> least_squares_ellipsoid_specific_fitting(std::ranges::viewable_range auto points) {
 	// design matrix D:
 	Eigen::Matrix<double, 10, Eigen::Dynamic> D;
