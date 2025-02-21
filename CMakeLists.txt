@@ -6,16 +6,23 @@ add_subdirectory(thirdparty/common)
 add_subdirectory(thirdparty/concurra)
 add_subdirectory(thirdparty/matplotlibcpp17)
 
+add_subdirectory(msg)
+
 find_package(Boost REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-project(msg)
-
-add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE msg)
-
 project(grab_mag_data)
+
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(calibrate_and_grab_mag_data)
 
 add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
