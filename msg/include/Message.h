@@ -1,11 +1,12 @@
 #pragma once
 
-#include <iostream>
+#include <ostream>
 #include <cstdint>
 
 template <typename Type>
 struct Message : public Type {
 	std::uint32_t timestamp;
+	std::string src;
 };
 
 template <typename Type>
