@@ -107,7 +107,7 @@ std::tuple<Eigen::Vector<double, 3>, Eigen::Matrix<double, 3, 3>> compute_offset
 }
 
 int main() {
-	auto filename = "mag_data_LIS3MDL_2025Feb25_14h35min42s_calibration.txt";
+	auto filename = "mag_data_MLX90393_2025Feb25_14h54min15s_calibration.txt";
 
 	Eigen::Vector<double, 10> const fitting = least_squares_ellipsoid_specific_fitting(file_mag_data_generator(std::ifstream(std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / filename)));
 
