@@ -34,12 +34,25 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOU
 
 project(calc_hard_and_soft_iron_offsets)
 
+add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC matplotlibcpp17::matplotlibcpp17)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(test_calc_hard_and_soft_iron_offsets)
+
 add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
-target_link_libraries(${PROJECT_NAME} PUBLIC sciplot)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC matplotlibcpp17::matplotlibcpp17)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
