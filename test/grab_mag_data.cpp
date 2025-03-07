@@ -13,7 +13,7 @@
 #include "Message.h"
 
 class SerialConnection : public Pusher<Message<MagneticFluxDensityData>> {
-	std::string sensor_name;
+	std::string board_name;
 
    public:
 	explicit SerialConnection(boost::asio::io_service& io, std::string const& port = "/dev/ttyACM0", unsigned int const baud_rate = 115200) : io(io), serial(io) {
@@ -69,28 +69,27 @@ class SerialConnection : public Pusher<Message<MagneticFluxDensityData>> {
 		static boost::regex const heartbeat_regex(R"(Heartbeat: '([0-9a-zA-Z]+)')");
 
 		while (true) {
-			auto [sensor_name1] = read_data<std::string>(heartbeat_regex);
-			auto [sensor_name2] = read_data<std::string>(heartbeat_regex);
+			auto [board_name1] = read_data<std::string>(heartbeat_regex);
+			auto [board_name2] = read_data<std::string>(heartbeat_regex);
 
-			if (sensor_name1 == sensor_name2) {
-				sensor_name = sensor_name1;
+			if (board_name1 == board_name2) {
+				board_name = board_name1;
 
 				break;
-			} else {
-				std::cout << sensor_name1 << " != " << sensor_name2 << std::endl;
 			}
+			std::cout << board_name1 << " != " << board_name2 << std::endl;
 		}
 
-		std::cout << "Sensor: " << sensor_name << std::endl;
+		std::cout << "Board: " << board_name << std::endl;
 
 		return push();
 	}
 	Message<MagneticFluxDensityData> push() override {
-		static boost::regex const mag_data_regex(R"(\[([0-9]+)\] \tX: (-?[0-9]+\.[0-9]+) \tY: (-?[0-9]+\.[0-9]+) \tZ: (-?[0-9]+\.[0-9]+) uTesla)");
+		static boost::regex const mag_data_regex(R"(\[([0-9]+)\] ([0-9a-zA-Z]+): X=(-?[0-9]+\.[0-9]+), Y=(-?[0-9]+\.[0-9]+), Z=(-?[0-9]+\.[0-9]+).)");
 
 		Message<MagneticFluxDensityData> data;
-		data.src = sensor_name;
-		std::tie(data.timestamp, data.x, data.y, data.z) = read_data<int, double, double, double>(mag_data_regex);
+
+		std::tie(data.timestamp, data.src, data.x, data.y, data.z) = read_data<int, std::string, double, double, double>(mag_data_regex);
 
 		return data;
 	}
@@ -109,25 +108,29 @@ class Printer : public RunnerSynchronous<Message<MagneticFluxDensityData>> {
 	void run(Message<MagneticFluxDensityData> const& data) override { std::cout << data.timestamp << ": " << data.x << ", " << data.y << ", " << data.z << std::endl; }
 };
 
+auto get_date_string(std::chrono::system_clock::time_point const& t = std::chrono::system_clock::now()) -> std::string {
+	auto const created = std::chrono::zoned_time{std::chrono::current_zone(), t}.get_local_time();
+	auto const day = std::chrono::floor<std::chrono::days>(created);
+	auto const second = std::chrono::floor<std::chrono::seconds>(created - day);
+	std::chrono::hh_mm_ss const hms{second};
+	std::chrono::year_month_day const ymd{day};
+
+	return common::stringprint(ymd.year(), ymd.month(), ymd.day(), '_', hms.hours(), hms.minutes(), hms.seconds());
+}
+
 class FilePrinter : public RunnerSynchronous<Message<MagneticFluxDensityData>> {
-	std::ofstream file;
+	std::map<std::string, std::ofstream> files;
 
    public:
 	FilePrinter() = default;
-	void run_once(Message<MagneticFluxDensityData> const& data) override {
-		auto const created = std::chrono::zoned_time{std::chrono::current_zone(), std::chrono::system_clock::now()}.get_local_time();
-		auto const day = std::chrono::floor<std::chrono::days>(created);
-		auto const second = std::chrono::floor<std::chrono::seconds>(created - day);
-		std::chrono::hh_mm_ss const hms{second};
-		std::chrono::year_month_day const ymd{day};
+	void run(Message<MagneticFluxDensityData> const& data) override {
+		if (! files.contains(data.src)) [[unlikely]] {
+			files[data.src].open(std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / common::stringprint("mag_data_", data.src, "_", get_date_string(), ".txt"));
+			files[data.src] << "timestamp,x,y,z" << std::endl;
+		}
 
-		auto date = common::stringprint(ymd.year(), ymd.month(), ymd.day(), '_', hms.hours(), hms.minutes(), hms.seconds());
-
-		file.open(std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / common::stringprint("mag_data_", data.src, '_', date, ".txt"));
-
-		return run(data);
+		files[data.src] << data << std::endl;
 	}
-	void run(Message<MagneticFluxDensityData> const& data) override { file << data << std::endl; }
 };
 
 int main() {
@@ -142,5 +145,5 @@ int main() {
 
 	auto conn_thread = conn();
 
-	std::this_thread::sleep_for(std::chrono::seconds(100));
+	std::this_thread::sleep_for(std::chrono::seconds(60));
 }
