@@ -22,12 +22,7 @@
 | ±5000 µT | 3.4 LSB/µT  | 1.1 µT  | 1.1 µT  | 1.8 µT  |
 * Noise can still be reduced to approx. 0.3/0.4 µT if the frequency is greatly reduced
 
-
 #### LIS2MDL:
 | Range     | Sensitivity | X-Noise | Y-Noise | Z-Noise |
 |-----------|-------------|---------|---------|---------|
 | ±49152 µT | 6.6 LSB/µT  | 0.3 µT  | 0.3 µT  | 0.3 µT  |
-
-
-
-
