@@ -3,9 +3,9 @@
 #include <ostream>
 
 struct MagneticFluxDensityData {
-	float x;
-	float y;
-	float z;
+	double x;
+	double y;
+	double z;
 };
 
 std::ostream& operator<<(std::ostream& os, MagneticFluxDensityData const& d);

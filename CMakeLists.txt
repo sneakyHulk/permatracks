@@ -6,6 +6,10 @@ add_subdirectory(thirdparty/common)
 add_subdirectory(thirdparty/concurra)
 add_subdirectory(thirdparty/matplotlibcpp17)
 
+add_library(serial thirdparty/serial/src/serial.cc thirdparty/serial/src/impl/unix.cc thirdparty/serial/src/impl/win.cc)
+target_include_directories(serial PUBLIC thirdparty/serial/include)
+target_link_libraries(serial PUBLIC rt pthread)
+
 add_subdirectory(msg)
 
 find_package(Boost REQUIRED)
@@ -19,6 +23,17 @@ target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(grab_mag_data_esp32)
+
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC serial)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
@@ -76,4 +91,3 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-
