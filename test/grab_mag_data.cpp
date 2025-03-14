@@ -145,5 +145,5 @@ int main() {
 
 	auto conn_thread = conn();
 
-	std::this_thread::sleep_for(std::chrono::seconds(60));
+	std::this_thread::sleep_for(std::chrono::seconds(62));
 }
