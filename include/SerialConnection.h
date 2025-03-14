@@ -1,5 +1,6 @@
+#pragma once
+
 #include <Pusher.h>
-#include <RunnerSynchronous.h>
 #include <common_output.h>
 
 #include <boost/asio.hpp>
