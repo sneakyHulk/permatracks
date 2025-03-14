@@ -26,7 +26,18 @@ target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
-project(grab_mag_data_esp32)
+project(grab_mag_data_array)
+
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC serial)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(calibrate_and_grab_mag_data_array)
 
 add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)

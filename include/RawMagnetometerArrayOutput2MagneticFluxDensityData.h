@@ -18,7 +18,7 @@ class RawMagnetometerArrayOutput2MagneticFluxDensityData : public Processor<RawM
 
 		boost::match_results<const char*> submatches;
 		if (!boost::regex_match(data.string + 0, data.string + data.bytes_transferred, submatches, array_regex)) {
-			std::cout << "no" << std::endl;
+			common::println_warn_loc("no");
 			throw std::invalid_argument("Invalid magnetometer data");
 		}
 
