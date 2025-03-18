@@ -25,3 +25,14 @@ for i = 1:m
 
     linkaxes(ax(i, :), 'y')
 end
+
+nexttile(5)
+hold on;
+plot([1 2], [1 2])
+
+figure
+for i = 1:30
+
+
+    
+end
