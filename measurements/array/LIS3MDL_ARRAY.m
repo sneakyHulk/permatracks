@@ -42,8 +42,18 @@ function B = dipol(sensor_position, magnet_position, magnet_radius, magnet_heigh
     r = [magnet_position.x - sensor_position.x, magnet_position.y - sensor_position.y, magnet_position.z - sensor_position.z]; % Vector vom Sensor zum Magneten
     M = magnet_remanence / magnetic_permeability; % Magnetisierung
     m = magnet_magnetic_direction * M * pi * magnet_radius^2 * magnet_height;
-
     B = magnetic_permeability / (4 * pi) * ((3*r*(m*r')) ./ norm(r)^5 - m ./ norm(r)^3);
+
+    %theta = 90 .* pi ./ 180;
+    %phi = 0 * pi / 180;
+
+    %m = magnet_remanence / 4 * magnet_radius^2 * magnet_height;
+    
+    %B2 = m * (3 * r(2) .* (...
+    %    sin(theta) * cos(phi) * r(1)...
+    %    + sin(theta) * sin(phi) * r(2)...
+    %    + cos(theta) * r(3)) ./ norm(r)^5 ...
+    %    - (sin(theta) * cos(phi)) ./ norm(r)^3) .* 1e6;
 end
 
 function B = biot_savat(sensor_position, magnet_position, magnet_radius, magnet_height, magnet_remanence) % magnet_magnetic_direction can only be [1, 0, 0].
@@ -84,10 +94,14 @@ calibration_values_z = readtable("../../result/mag_data_LIS3MDL_ARRAY_mean_2025M
 test_values = readtable("../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt");
 
 calibration_values = [...
-    calibration_values_x.y0(1:10) calibration_values_x.x0(1:10) calibration_values_x.z0(1:10)
-    calibration_values_y.y0(1:10) calibration_values_y.x0(1:10) calibration_values_y.z0(1:10)
-    calibration_values_z.y0(1:10) calibration_values_z.x0(1:10) calibration_values_z.z0(1:10)
+    calibration_values_x.y0(2:end) calibration_values_x.x0(2:end) calibration_values_x.z0(2:end)
+    calibration_values_y.y0(2:end) calibration_values_y.x0(2:end) calibration_values_y.z0(2:end)
+    calibration_values_z.y0(2:end) calibration_values_z.x0(2:end) calibration_values_z.z0(2:end)
     ];
+
+test_values = [...
+    test_values.y0(2:end) test_values.x0(2:end) test_values.z0(2:end)
+];
 
 test_points = [
     holes_positions_direction_magnet_faces_x(1, 3)...
@@ -185,6 +199,7 @@ directions = [
 dim = 3;
 A = zeros(numel(points) * dim, 12);
 b = zeros(1, numel(points) * dim);
+b2 = zeros(1, numel(points) * dim);
 for i = 1:numel(points)
    A((i - 1) * dim + 1, 1) = calibration_values(i, 1);
    A((i - 1) * dim + 1, 2) = calibration_values(i, 2);
@@ -202,6 +217,7 @@ for i = 1:numel(points)
    A((i - 1) * dim + 3, 12) = 1;
    
    b((i - 1) * dim + 1:(i - 1) * dim + 3) = dipol(lis3mdl_positions(1), points(i), Radius, Height, Remanence, directions(i).direction) * 1e6;
+   b2((i - 1) * dim + 1:(i - 1) * dim + 3) = dipol(lis3mdl_positions(2), points(i), Radius, Height, Remanence, directions(i).direction) * 1e6;
 end
 
 x = A(:, :) \ b';
@@ -216,16 +232,16 @@ transform2 = ... done with ransac
 for i = 1:10
     gt(i, :) = dipol(lis3mdl_positions(1), test_points(i), Radius, Height, Remanence, test_directions(i).direction) * 1e6;
     gt2(i, :) = biot_savat(lis3mdl_positions(1), test_points(i), Radius, Height, Remanence) * 1e6;
-    v1(i, :) = transform * [test_values.y0(i) test_values.x0(i) test_values.z0(i) 1]'; % static and linear
-    v2(i, :) = [test_values.y0(i) test_values.x0(i) test_values.z0(i)] - [test_values.y0(11) test_values.x0(11) test_values.z0(11)]; % only static magnetci field
-    v3(i, :) = transform2 * [test_values.y0(i) test_values.x0(i) test_values.z0(i) 1]'; % static and linear and ransac
+    v1(i, :) = transform * [test_values(i, :) 1]'; % static and linear
+    %v2(i, :) = [test_values.y0(i) test_values.x0(i) test_values.z0(i)] - [test_values.y0(1) test_values.x0(1) test_values.z0(1)]; % only static magnetci field
+    v3(i, :) = transform2 * [test_values(i, :) 1]'; % static and linear and ransac
 
     jac = jacobianest(@(x) dipol(lis3mdl_positions(1), struct('x', x(1), 'y', x(2), 'z', x(3)), Radius, Height, Remanence, test_directions(i).direction), [test_points(i).x test_points(i).y test_points(i).z])
     err_uT1(i, :) = gt(i, :) - v1(i, 1:3);
     err_mm1(i, :) = abs(1./ diag(jac))' .* abs(gt(i, :) - v1(i, 1:3)) * 1e-6 * 1e3;
 
-    err_uT2(i, :) = gt(i, :) - v2(i, 1:3);
-    err_mm2(i, :) = abs(1./ diag(jac))' .* abs(gt(i, :) - v2(i, 1:3)) * 1e-6 * 1e3;
+    %err_uT2(i, :) = gt(i, :) - v2(i, 1:3);
+    %err_mm2(i, :) = abs(1./ diag(jac))' .* abs(gt(i, :) - v2(i, 1:3)) * 1e-6 * 1e3;
 
     err_uT3(i, :) = gt(i, :) - v3(i, 1:3);
     err_mm3(i, :) = abs(1./ diag(jac))' .* abs(gt(i, :) - v3(i, 1:3)) * 1e-6 * 1e3;

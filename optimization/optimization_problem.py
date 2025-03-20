@@ -1,0 +1,98 @@
+import sympy as sp
+import math
+import numpy as np
+import itertools
+import matplotlib.pyplot as plt
+import scipy.optimize
+import scipy
+
+
+def optimize(F, symbols, B):
+    H = 4e-3
+    R = 3e-3
+    m = 1.35 / 4 * H * R ** 2
+
+    F = sp.Matrix(F).subs(symbols['m1'], m)
+
+    lam_F = sp.utilities.lambdify(
+        [symbols['x1'], symbols['y1'], symbols['z1'], symbols['theta1'], symbols['phi1'], symbols['Gx'], symbols['Gy'],
+         symbols['Gz']], F.T.tolist()[0], 'numpy')
+    lam_J = sp.utilities.lambdify(
+        [symbols['x1'], symbols['y1'], symbols['z1'], symbols['theta1'], symbols['phi1'], symbols['Gx'], symbols['Gy'],
+         symbols['Gz']],
+        F.jacobian([symbols['x1'], symbols['y1'], symbols['z1'], symbols['theta1'], symbols['phi1'], symbols['Gx'],
+                    symbols['Gy'], symbols['Gz']]).T.tolist(), 'numpy')
+
+    # print(np.array(lam_F(37.5e-3, 30e-3, 55e-3, 90 * math.pi / 180, 0 * math.pi / 180, 0, 0, 0)))
+    # print(np.array(lam_J(37.5e-3, 30e-3, 55e-3, 90 * math.pi / 180, 0 * math.pi / 180, 0, 0, 0)))
+
+    def objective_function(X, B):
+        return np.array(lam_F(*X)) - B
+
+    def objective_function_jacobian(X, B):
+        return np.transpose(lam_J(*X))
+
+    res = scipy.optimize.least_squares(objective_function,
+                                       [210e-3 / 2, 210e-3 / 2, 55e-3, 0, 0, 0, 0, 0],
+                                       method='lm', jac=objective_function_jacobian, args=(B,))
+
+    return res.x
+
+
+from calibration.calibration import compute_from_position_direction_values, calibrate_using_coordinate_transform_ransac
+from optimization.models import dipol_model
+from data_collection.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
+    get_sensor_position_values
+import matplotlib.pyplot as plt
+
+if __name__ == '__main__':
+    sensor_position_values = get_sensor_position_values()
+    model, symbols = dipol_model(sensor_position_values)
+
+    B = compute_from_position_direction_values(sensor_position_values,
+                                               [[30e-3, 30e-3, 55e-3, 90 * math.pi / 180,
+                                                 0 * math.pi / 180]])
+
+    # print(B.flatten())
+
+    optimize(model, symbols, B.flatten())
+
+    filepaths = ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
+                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
+                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
+
+    measured_data = collect(filepaths)
+    magnets_position_direction_values = collect_position_direction_values(filepaths)
+    sensor_position_values = get_sensor_position_values()
+
+    computed_data = compute_from_position_direction_values(sensor_position_values, magnets_position_direction_values[0])
+
+    transforms = [calibrate_using_coordinate_transform_ransac(src, dst) for src, dst in
+                  zip(measured_data, computed_data)]
+
+    measurements_for_each_sensor = collect(["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])
+
+    transformed_measurements_for_each_sensor = np.array(
+        [[np.dot(transform, np.append(measurement, 1))[0:3] for measurement in measurements_for_one_sensor] for
+         transform, measurements_for_one_sensor in zip(transforms, measurements_for_each_sensor)])
+    transformed_sensor_data_for_each_measurement = np.swapaxes(transformed_measurements_for_each_sensor, 0, 1)
+
+    optimized_positions_direction_values = np.array(
+        [optimize(model, symbols, transformed_sensor_data_for_one_measurement.flatten())
+         for transformed_sensor_data_for_one_measurement in
+         transformed_sensor_data_for_each_measurement])
+
+    ground_truth_positions_direction_values = collect_position_direction_values(
+        ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])[0]
+
+    err = np.abs(optimized_positions_direction_values[:, 0:3] - ground_truth_positions_direction_values[:, 0:3])
+
+    fig, ax = plt.subplots()
+    ax.plot(np.linspace(1, 10, 10), err[:, 0] * 1e3)
+    ax.plot(np.linspace(1, 10, 10), err[:, 1] * 1e3)
+    ax.plot(np.linspace(1, 10, 10), err[:, 2] * 1e3)
+    ax.legend(["x", "y", "z"])
+    ax.set_title("Position error in x, y and z direction")
+    ax.set_xlabel("Measurements")
+    ax.set_ylabel("Measurement error [mm]")
+    plt.show()
