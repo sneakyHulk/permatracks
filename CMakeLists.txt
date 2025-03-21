@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.30)
-
 project(permatracks)
+
+set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(thirdparty/common)
 add_subdirectory(thirdparty/concurra)
@@ -101,4 +102,13 @@ target_link_libraries(${PROJECT_NAME} PUBLIC matplotlibcpp17::matplotlibcpp17)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(test_averager)
+
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

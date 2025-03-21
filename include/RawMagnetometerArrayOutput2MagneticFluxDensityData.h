@@ -2,17 +2,18 @@
 #include <array>
 #include <boost/regex.hpp>
 
+#include "Array.h"
 #include "MagneticFluxDensityData.h"
 #include "Message.h"
 #include "Processor.h"
 #include "RawMagnetometerArrayOutput.h"
 
-class RawMagnetometerArrayOutput2MagneticFluxDensityData : public Processor<RawMagnetometerArrayOutput, Message<std::array<MagneticFluxDensityData, 16>>> {
+class RawMagnetometerArrayOutput2MagneticFluxDensityData : public Processor<RawMagnetometerArrayOutput, Message<Array<MagneticFluxDensityData, 16>>> {
 	double const sensitivity;
 
    public:
-	RawMagnetometerArrayOutput2MagneticFluxDensityData(double const sensitivity_lsb_uT = 68.42) : sensitivity(sensitivity_lsb_uT) {}
-	Message<std::array<MagneticFluxDensityData, 16>> process(RawMagnetometerArrayOutput const& data) override {
+	explicit RawMagnetometerArrayOutput2MagneticFluxDensityData(double const sensitivity_lsb_uT = 68.42) : sensitivity(sensitivity_lsb_uT) {}
+	Message<Array<MagneticFluxDensityData, 16>> process(RawMagnetometerArrayOutput const& data) override {
 		static boost::regex const array_regex(
 		    R"((-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n(-?[0-9]+) (-?[0-9]+) (-?[0-9]+)\r\n)");
 

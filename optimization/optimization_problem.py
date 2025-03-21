@@ -2,17 +2,50 @@ import sympy as sp
 import math
 import numpy as np
 import itertools
-import matplotlib.pyplot as plt
 import scipy.optimize
 import scipy
+import pyswarms as ps
 
 
-def optimize(F, symbols, B):
+def optimize_particle_swarm(F, symbols, B):
     H = 4e-3
     R = 3e-3
     m = 1.35 / 4 * H * R ** 2
 
     F = sp.Matrix(F).subs(symbols['m1'], m)
+
+    lam_F = sp.utilities.lambdify(
+        [symbols['x1'], symbols['y1'], symbols['z1'], symbols['theta1'], symbols['phi1'], symbols['Gx'], symbols['Gy'],
+         symbols['Gz']], F.T.tolist()[0], 'numpy')
+
+    swarm_size = 100
+    options = {'c1': 1.5, 'c2': 1.5, 'w': 0.5}
+
+    constraints = (np.array([0, 0, 0, -180 * math.pi / 180, -180 * math.pi / 180, -50e-6, -50e-6, -50e-6]),
+                   np.array([210e-3, 210e-3, 210e-3, 180 * math.pi / 180, 180 * math.pi / 180, 50e-6, 50e-6, 50e-6]))
+
+    def objective_function(X):
+        return np.linalg.vector_norm(np.array([lam_F(*x) for x in X]) - B, axis=1)
+
+    optimizer = ps.single.GlobalBestPSO(n_particles=swarm_size,
+                                        dimensions=8,
+                                        options=options,
+                                        bounds=constraints)
+
+    cost, x = optimizer.optimize(objective_function, iters=2000)
+
+    return x
+
+
+def optimize_least_squares_levenberg_marquardt(F, symbols, B):
+    H = 4e-3
+    R = 3e-3
+    m = 1.35 / 4 * H * R ** 2
+
+    print(sp.ccode(F))
+    F = sp.Matrix(F).subs(symbols['m1'], m)
+
+
 
     lam_F = sp.utilities.lambdify(
         [symbols['x1'], symbols['y1'], symbols['z1'], symbols['theta1'], symbols['phi1'], symbols['Gx'], symbols['Gy'],
@@ -39,7 +72,8 @@ def optimize(F, symbols, B):
     return res.x
 
 
-from calibration.calibration import compute_from_position_direction_values, calibrate_using_coordinate_transform_ransac
+from calibration.calibration import compute_from_position_direction_values, calibrate_using_coordinate_transform_ransac, \
+    calibrate_using_coordinate_transform
 from optimization.models import dipol_model
 from data_collection.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
     get_sensor_position_values
@@ -55,7 +89,7 @@ if __name__ == '__main__':
 
     # print(B.flatten())
 
-    optimize(model, symbols, B.flatten())
+    optimize_least_squares_levenberg_marquardt(model, symbols, B.flatten())
 
     filepaths = ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
                  "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
@@ -67,7 +101,7 @@ if __name__ == '__main__':
 
     computed_data = compute_from_position_direction_values(sensor_position_values, magnets_position_direction_values[0])
 
-    transforms = [calibrate_using_coordinate_transform_ransac(src, dst) for src, dst in
+    transforms = [calibrate_using_coordinate_transform(src, dst) for src, dst in
                   zip(measured_data, computed_data)]
 
     measurements_for_each_sensor = collect(["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])
@@ -77,13 +111,18 @@ if __name__ == '__main__':
          transform, measurements_for_one_sensor in zip(transforms, measurements_for_each_sensor)])
     transformed_sensor_data_for_each_measurement = np.swapaxes(transformed_measurements_for_each_sensor, 0, 1)
 
+
+
     optimized_positions_direction_values = np.array(
-        [optimize(model, symbols, transformed_sensor_data_for_one_measurement.flatten())
+        [optimize_least_squares_levenberg_marquardt(model, symbols,
+                                 transformed_sensor_data_for_one_measurement.flatten())
          for transformed_sensor_data_for_one_measurement in
          transformed_sensor_data_for_each_measurement])
 
     ground_truth_positions_direction_values = collect_position_direction_values(
         ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])[0]
+
+    print(optimized_positions_direction_values[:, 3:8])
 
     err = np.abs(optimized_positions_direction_values[:, 0:3] - ground_truth_positions_direction_values[:, 0:3])
 
