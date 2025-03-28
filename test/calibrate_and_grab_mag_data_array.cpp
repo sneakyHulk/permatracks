@@ -157,7 +157,7 @@ Direction make_direction(char holes_facing, int x_pos, int y_pos, bool in_positi
 
 int main(int argc, char *argv[]) {
 	MagnetometerArrayMagneticFluxDensityDataAverager avg;
-	UpdaterMagnetometerArrayMagneticFluxDensityDataToMagnetometerArrayMagneticFluxDensityDataWithTruePositionDirection updater(Position{1, 2, 3}, Direction{1, 2});
+	UpdaterMagnetometerArrayMagneticFluxDensityDataToMagnetometerArrayMagneticFluxDensityDataWithTruePositionDirection updater(Position{0, 0, 0}, Direction{0, 0});
 	MagnetometerArrayMagneticFluxDensityDataFilePrinterWithTruePositionDirection file_printer;
 
 	avg.asynchronously_connect(updater);
