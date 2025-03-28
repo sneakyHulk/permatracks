@@ -45,8 +45,6 @@ def optimize_least_squares_levenberg_marquardt(F, symbols, B):
     print(sp.ccode(F))
     F = sp.Matrix(F).subs(symbols['m1'], m)
 
-
-
     lam_F = sp.utilities.lambdify(
         [symbols['x1'], symbols['y1'], symbols['z1'], symbols['theta1'], symbols['phi1'], symbols['Gx'], symbols['Gy'],
          symbols['Gz']], F.T.tolist()[0], 'numpy')
@@ -72,14 +70,16 @@ def optimize_least_squares_levenberg_marquardt(F, symbols, B):
     return res.x
 
 
-from calibration.calibration import compute_from_position_direction_values, calibrate_using_coordinate_transform_ransac, \
-    calibrate_using_coordinate_transform
-from optimization.models import dipol_model
-from data_collection.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
+from calibration.scripts.calibration import compute_from_position_direction_values, \
+    calibrate_using_coordinate_transform_ransac, \
+    calibrate_using_coordinate_transform, test_calibration
+from optimization.scripts.models import dipol_model
+from data_collection.scripts.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
     get_sensor_position_values
 import matplotlib.pyplot as plt
 
-if __name__ == '__main__':
+
+def test_optimization1():
     sensor_position_values = get_sensor_position_values()
     model, symbols = dipol_model(sensor_position_values)
 
@@ -87,40 +87,31 @@ if __name__ == '__main__':
                                                [[30e-3, 30e-3, 55e-3, 90 * math.pi / 180,
                                                  0 * math.pi / 180]])
 
-    # print(B.flatten())
-
     optimize_least_squares_levenberg_marquardt(model, symbols, B.flatten())
 
-    filepaths = ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
-                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
-                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
 
-    measured_data = collect(filepaths)
-    magnets_position_direction_values = collect_position_direction_values(filepaths)
+def test_optimization2():
     sensor_position_values = get_sensor_position_values()
+    model, symbols = dipol_model(sensor_position_values)
 
-    computed_data = compute_from_position_direction_values(sensor_position_values, magnets_position_direction_values[0])
+    transforms = test_calibration()
 
-    transforms = [calibrate_using_coordinate_transform(src, dst) for src, dst in
-                  zip(measured_data, computed_data)]
-
-    measurements_for_each_sensor = collect(["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])
+    measurements_for_each_sensor = collect(
+        ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])
 
     transformed_measurements_for_each_sensor = np.array(
         [[np.dot(transform, np.append(measurement, 1))[0:3] for measurement in measurements_for_one_sensor] for
          transform, measurements_for_one_sensor in zip(transforms, measurements_for_each_sensor)])
     transformed_sensor_data_for_each_measurement = np.swapaxes(transformed_measurements_for_each_sensor, 0, 1)
 
-
-
     optimized_positions_direction_values = np.array(
         [optimize_least_squares_levenberg_marquardt(model, symbols,
-                                 transformed_sensor_data_for_one_measurement.flatten())
+                                                    transformed_sensor_data_for_one_measurement.flatten())
          for transformed_sensor_data_for_one_measurement in
          transformed_sensor_data_for_each_measurement])
 
     ground_truth_positions_direction_values = collect_position_direction_values(
-        ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])[0]
+        ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])[0]
 
     print(optimized_positions_direction_values[:, 3:8])
 
@@ -135,3 +126,8 @@ if __name__ == '__main__':
     ax.set_xlabel("Measurements")
     ax.set_ylabel("Measurement error [mm]")
     plt.show()
+
+
+if __name__ == '__main__':
+    test_optimization1()
+    test_optimization2()

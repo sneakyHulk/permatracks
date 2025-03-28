@@ -56,7 +56,7 @@ def collect_position_direction_values(filepaths):
 
 
 def get_holes_position_direction_values(holes_descriptions):
-    with open("../result/test.csv", "w") as file:
+    with open("../../result/test.csv", "w") as file:
         writer = csv.DictWriter(file,
                                 fieldnames=["mag_x0", "mag_y0", "mag_z0", "mag_theta0", "mag_phi0"])
 
@@ -90,9 +90,9 @@ def get_sensor_position_values(rows=4, columns=4, stride=30e-3, start=(40e-3, 45
 
 
 if __name__ == '__main__':
-    filepaths = ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
-                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
-                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
+    filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
 
     print(collect(filepaths))
     print(collect_position_direction_values(filepaths))

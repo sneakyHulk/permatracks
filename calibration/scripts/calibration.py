@@ -30,7 +30,7 @@ def calibrate_using_coordinate_transform_ransac(src, dst):
     return model.params
 
 
-from optimization.models import dipol_model
+from optimization.scripts.models import dipol_model
 import sympy as sp
 import itertools
 
@@ -55,13 +55,13 @@ def compute_from_position_direction_values(sensor_position_values, magnet_positi
     return computed_data
 
 
-from data_collection.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
+from data_collection.scripts.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
     get_sensor_position_values
 
-if __name__ == "__main__":
-    filepaths = ["../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
-                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
-                 "../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
+def test_calibration():
+    filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
 
     measured_data = collect(filepaths)
     magnets_position_direction_values = collect_position_direction_values(filepaths)
@@ -81,5 +81,12 @@ if __name__ == "__main__":
         for measurement in src:
             print(np.dot(transform, np.append(measurement, 1)))
 
-    transforms = [calibrate_using_coordinate_transform_ransac(src, dst) for src, dst in
+    transforms = [calibrate_using_coordinate_transform(src, dst) for src, dst in
                   zip(measured_data, computed_data)]
+
+    return transforms
+
+if __name__ == "__main__":
+    test_calibration()
+
+

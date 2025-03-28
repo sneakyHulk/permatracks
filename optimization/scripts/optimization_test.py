@@ -33,7 +33,7 @@ def run1():
     print("y:", np.array(lam_f(*res.x)))
 
 
-cProfile.run('run1()')
+run1()
 
 import pyswarms as ps
 
@@ -55,12 +55,12 @@ optimizer = ps.single.GlobalBestPSO(n_particles=swarm_size,
                                     options=options,
                                     bounds=constraints)
 
+
 def run2():
     cost, x = optimizer.optimize(opt_func, iters=10)
 
     print("x:", x)
     print("y:", np.array(lam_f(*x)))
 
-cProfile.run('run2()')
 
-
+run2()

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import scipy.optimize
 import scipy
 
+
 def dipol_model(sensor_position_direction_values):
     Gx, Gy, Gz = sp.symbols('Gx, Gy, Gz', real=True)
     x1, y1, z1 = sp.symbols('x1, y1, z1', real=True)
@@ -51,4 +52,13 @@ def dipol_model(sensor_position_direction_values):
     # model = Bi1x + Bi1y + Bi1z
     symbols = {'x1': x1, 'y1': y1, 'z1': z1, 'm1': m1, 'theta1': theta1, 'phi1': phi1, 'Gx': Gx, 'Gy': Gy, 'Gz': Gz}
 
+    return model, symbols
+
+
+def test_model():
+    x, y, z = sp.symbols('x, y, z', real=True)
+
+    model = [x ** 2 - 1, y ** 2 - 1, z ** 2 - 1]
+
+    symbols = {'x': x, 'y': y, 'z': z}
     return model, symbols

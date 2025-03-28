@@ -6,16 +6,30 @@ set(CMAKE_CXX_STANDARD 23)
 add_subdirectory(thirdparty/common)
 add_subdirectory(thirdparty/concurra)
 add_subdirectory(thirdparty/matplotlibcpp17)
+add_subdirectory(thirdparty/csv-parser)
 
 add_library(serial thirdparty/serial/src/serial.cc thirdparty/serial/src/impl/unix.cc thirdparty/serial/src/impl/win.cc)
 target_include_directories(serial PUBLIC thirdparty/serial/include)
-target_link_libraries(serial PUBLIC rt pthread)
 
-add_subdirectory(msg)
+if(APPLE)
+    find_library(IOKIT_LIBRARY IOKit REQUIRED)
+    find_library(FOUNDATION_LIBRARY Foundation REQUIRED)
+
+    target_link_libraries(serial PUBLIC ${FOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
+endif()
+
+if (UNIX AND NOT APPLE)
+    target_link_libraries(serial PUBLIC rt pthread)
+endif ()
 
 find_package(Boost REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
+
+add_subdirectory(msg)
+add_subdirectory(calibration)
+add_subdirectory(optimization)
+
 
 project(grab_mag_data)
 
