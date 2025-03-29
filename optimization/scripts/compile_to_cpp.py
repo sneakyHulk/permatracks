@@ -1,7 +1,7 @@
 import sympy as sp
 from sympy.codegen.rewriting import create_expand_pow_optimization
 from models import dipol_model, test_model
-from data_collection.collect_medability_sensor_array_data import get_sensor_position_values
+from data_collection.scripts.collect_medability_sensor_array_data import get_sensor_position_values
 from sympy.utilities.codegen import codegen
 
 
@@ -67,4 +67,4 @@ def compile_test_model():
 
 
 if __name__ == "__main__":
-    compile_test_model()
+    compile_dipol_model()
