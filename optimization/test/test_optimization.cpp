@@ -3,7 +3,6 @@
 
 extern "C" {
 #include <test_model.h>
-#include <sensor_array_dipol_model.h>
 }
 
 struct Functor : public Eigen::DenseFunctor<double> {
