@@ -8,7 +8,7 @@ extern "C" {
 struct Functor : public Eigen::DenseFunctor<double> {
     Eigen::Vector<double, 3> B;
     // Constructor
-    Functor(Eigen::Vector<double, 3> &&B) : Eigen::DenseFunctor<double>(3, 3), B(B) {
+    explicit Functor(Eigen::Vector<double, 3> &&B) : Eigen::DenseFunctor<double>(3, 3), B(B) {
     }
 
     // Number of residuals

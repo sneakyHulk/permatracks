@@ -11,12 +11,12 @@ add_subdirectory(thirdparty/csv-parser)
 add_library(serial thirdparty/serial/src/serial.cc thirdparty/serial/src/impl/unix.cc thirdparty/serial/src/impl/win.cc)
 target_include_directories(serial PUBLIC thirdparty/serial/include)
 
-if(APPLE)
+if (APPLE)
     find_library(IOKIT_LIBRARY IOKit REQUIRED)
     find_library(FOUNDATION_LIBRARY Foundation REQUIRED)
 
     target_link_libraries(serial PUBLIC ${FOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
-endif()
+endif ()
 
 if (UNIX AND NOT APPLE)
     target_link_libraries(serial PUBLIC rt pthread)
@@ -29,6 +29,9 @@ find_package(Eigen3 REQUIRED)
 add_subdirectory(msg)
 add_subdirectory(calibration)
 add_subdirectory(optimization)
+add_subdirectory(data_collection)
+add_subdirectory(visualization)
+add_subdirectory(utils)
 
 
 project(grab_mag_data)

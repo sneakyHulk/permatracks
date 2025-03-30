@@ -68,3 +68,4 @@ def compile_test_model():
 
 if __name__ == "__main__":
     compile_dipol_model()
+    compile_test_model()
