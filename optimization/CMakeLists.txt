@@ -21,5 +21,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} PUBLIC eigen_utils)
+target_link_libraries(${PROJECT_NAME} PUBLIC data_collection_offline)
+target_link_libraries(${PROJECT_NAME} PUBLIC calibration)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 

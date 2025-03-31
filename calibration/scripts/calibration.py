@@ -21,9 +21,15 @@ def calibrate_using_coordinate_transform_ransac(src, dst):
             super().__init__(dimensionality=3)
 
     model, inliers = ransac((src, dst), AffineTransform3D, min_samples=4, residual_threshold=1e-6, max_trials=1000)
-    outliers = inliers == False
 
     print("RANSAC Affine transform:")
+    if not model:
+        model = np.ones((4, 4)) * np.nan
+        print(model)
+        return model
+
+    outliers = inliers == False
+
     print(model.params)
     print("Outliers: ", outliers)
 
@@ -58,6 +64,7 @@ def compute_from_position_direction_values(sensor_position_values, magnet_positi
 from data_collection.scripts.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
     get_sensor_position_values
 
+
 def test_calibration():
     filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
                  "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
@@ -86,7 +93,6 @@ def test_calibration():
 
     return transforms
 
+
 if __name__ == "__main__":
     test_calibration()
-
-

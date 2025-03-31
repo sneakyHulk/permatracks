@@ -16,25 +16,30 @@ extern "C" {
 #include <sensor_array_dipol_model.h>
 }
 
-class LevenbergMarquardtOptimizer : public Processor<Array<MagneticFluxDensityData, 16>, Pack<Position, Direction>> {
+template <std::size_t N>
+class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxDensityData, N>>, Pack<Position, Direction>> {
 	double const m1;
 	Eigen::Vector<double, 8> init;
 
 	struct DipolModelFunctor : public Eigen::DenseFunctor<double> {
 		double const &m1;
-		Eigen::Vector<double, 48> _residuum;
+		Eigen::Vector<double, 8 * N> _residuum;
+		Eigen::Array<bool, 8 * N, 1> _mask;
 
 	   public:
-		DipolModelFunctor(double const &m1, Array<MagneticFluxDensityData, 16> const &residuum) : Eigen::DenseFunctor<double>(8, 48), m1(m1) {
-			for (auto const &[in, out] : std::ranges::views::zip(residuum, _residuum | std::ranges::views::adjacent<3> | std::ranges::views::stride(3))) {
-				auto const &[inx, iny, inz] = in;
-
-				out = std::tie(inx, iny, inz);
-			}
-		}
+		DipolModelFunctor(double const &m1, Eigen::Vector<double, 8 * N> const &residuum, Eigen::Array<bool, 8 * N, 1> const &mask) : Eigen::DenseFunctor<double>(8, 8 * (N - mask.count())), m1(m1), _residuum(residuum), _mask(mask) {}
 
 		int operator()(InputType const &x, ValueType &fvec) const {
-			dipol_model(fvec.array().data(), nullptr, m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+			Eigen::Vector<double, 8 * N> f;
+			dipol_model(f.array().data(), nullptr, m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+
+
+
+			for (auto const [i, filtered] : std::ranges::views::zip(_mask, f - _residuum) | std::ranges::views::filter([](auto const &filter) { return !std::get<0>(filter); })) {
+				auto [filter, values] = filtered;
+
+				fvec(i) = values;
+			}
 
 			fvec -= _residuum;
 
@@ -42,7 +47,15 @@ class LevenbergMarquardtOptimizer : public Processor<Array<MagneticFluxDensityDa
 		}
 
 		int df(InputType const &x, JacobianType &fjac) const {
-			dipol_model_jacobian(nullptr, fjac.array().data(), m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+			Eigen::Matrix<double, 8 * N, 8> j;
+
+			dipol_model_jacobian(nullptr, j.array().data(), m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+
+			for (auto const [i, filtered] : std::ranges::views::zip(_mask, j) | std::ranges::views::filter([](auto const &filter) { return !std::get<0>(filter); })) {
+				auto [filter, values] = filtered;
+
+				fjac(i) = values;
+			}
 
 			return 0;
 		}
@@ -51,8 +64,16 @@ class LevenbergMarquardtOptimizer : public Processor<Array<MagneticFluxDensityDa
    public:
 	LevenbergMarquardtOptimizer(double m1, double x = 21e-2 / 2, double y = 21e-2 / 2, double z = 15e-2 / 2.) : m1(m1), init({x, y, z, 0, 0, 0, 0, 0}) {}
 
-	Pack<Position, Direction> process(Array<MagneticFluxDensityData, 16> const &data) override {
-		DipolModelFunctor functor(m1, data);
+	Pack<Position, Direction> process(Message<Array<MagneticFluxDensityData, 16>> const &data) override {
+		Eigen::Vector<double, 8 * N> residuum;
+		for (auto const &[in, out] : std::ranges::views::zip(data, residuum | std::ranges::views::adjacent<3> | std::ranges::views::stride(3))) {
+			auto const &[inx, iny, inz] = in;
+
+			out = std::tie(inx, iny, inz);
+		}
+		Eigen::Array<bool, 8 * N, 1> mask = residuum.array().isNaN();
+
+		DipolModelFunctor functor(m1, residuum, mask);
 
 		Eigen::LevenbergMarquardt<DipolModelFunctor> lm(functor);
 		Eigen::Vector<double, Eigen::Dynamic> result = init;

@@ -1,25 +1,22 @@
 #include <common_output.h>
 
-#include <csv.hpp>
+#include <Eigen/Eigen>
 #include <filesystem>
+#include <fstream>
 #include <generator>
+#include <nlohmann/json.hpp>
 #include <ranges>
-#include <set>
 
-std::generator<std::tuple<std::string, std::string, std::string> > get_x_y_z_names(std::vector<std::string> col_names) {
-	std::set<std::string> cols(col_names.begin(), col_names.end());
-
-	for (auto i = 0; cols.contains(common::stringprint('x', i)) && cols.contains(common::stringprint('y', i)) && cols.contains(common::stringprint('z', i)); ++i) {
-		co_yield {common::stringprint('x', i), common::stringprint('y', i), common::stringprint('z', i)};
-	}
-}
+#include "EigenJsonUtils.h"
+#include "MagneticFluxDensityDataTransformation.h"
 
 int main() {
-	csv::CSVReader reader((std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt").string());
+	std::ifstream stream(std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "current_calibration.json");
 
-	for (const auto &row : reader | std::ranges::views::drop(1)) {
-		for (const auto& [x, y, z] : get_x_y_z_names(row.get_col_names())) {
-			std::cout << row[x].get<double>() << std::endl;
-		}
-	}
+	nlohmann::json json = nlohmann::json::parse(stream);
+	std::vector transformations = json | std::ranges::views::transform([](auto const &v) { return v["transformation"].template get<Eigen::Matrix<double, 4, 4>>(); }) | std::ranges::to<std::vector>();
+
+	MagneticFluxDensityDataTransformation<16> transformation(std::forward<decltype(transformations)>(transformations));
+
+
 }
