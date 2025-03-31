@@ -7,6 +7,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC common)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC csv)
 target_link_libraries(${PROJECT_NAME} PUBLIC gcov)
+target_compile_options(${PROJECT_NAME} PUBLIC -fcoroutines)
 
 project(data_collection_online)
 
