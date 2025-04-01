@@ -5,7 +5,7 @@
 
 template <typename Type>
 struct Message : public Type {
-	std::uint32_t timestamp;
+	std::uint64_t timestamp;
 	std::string src;
 };
 

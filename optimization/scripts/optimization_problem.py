@@ -42,7 +42,6 @@ def optimize_least_squares_levenberg_marquardt(F, symbols, B):
     R = 3e-3
     m = 1.35 / 4 * H * R ** 2
 
-    print(sp.ccode(F))
     F = sp.Matrix(F).subs(symbols['m1'], m)
 
     lam_F = sp.utilities.lambdify(
@@ -64,7 +63,7 @@ def optimize_least_squares_levenberg_marquardt(F, symbols, B):
         return np.transpose(lam_J(*X))
 
     res = scipy.optimize.least_squares(objective_function,
-                                       [210e-3 / 2, 210e-3 / 2, 55e-3, 0, 0, 0, 0, 0],
+                                       [210e-3 / 2, 210e-3 / 2, 15e-2 / 2, 0, 0, 0, 0, 0],
                                        method='lm', jac=objective_function_jacobian, args=(B,))
 
     return res.x
@@ -129,5 +128,5 @@ def test_optimization2():
 
 
 if __name__ == '__main__':
-    test_optimization1()
     test_optimization2()
+    test_optimization1()

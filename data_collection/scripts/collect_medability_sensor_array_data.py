@@ -46,7 +46,7 @@ def collect_position_direction_values(filepaths):
             data = np.array([[[float(row[mag_x]), float(row[mag_y]), float(row[mag_z]), float(row[mag_theta]),
                                float(row[mag_phi])] for mag_x, mag_y, mag_z, mag_theta, mag_phi in
                               relevant_fieldnames(reader.fieldnames)] for row in
-                             itertools.islice(reader, 1, None)])  # x and y changed in medability array code
+                             itertools.islice(reader, 1, None)])
             data = np.swapaxes(data, 0, 1)
 
             return data

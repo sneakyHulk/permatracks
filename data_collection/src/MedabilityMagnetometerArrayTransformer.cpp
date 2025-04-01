@@ -1,0 +1,1 @@
+#include "MedabilityMagnetometerArrayTransformer.h"

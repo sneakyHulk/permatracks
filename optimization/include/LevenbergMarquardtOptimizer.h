@@ -5,6 +5,7 @@
 #include <ranges>
 #include <unsupported/Eigen/LevenbergMarquardt>
 
+#include "AfterReturnTimeMeasure.h"
 #include "Array.h"
 #include "Direction.h"
 #include "MagneticFluxDensityData.h"
@@ -23,38 +24,33 @@ class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxD
 
 	struct DipolModelFunctor : public Eigen::DenseFunctor<double> {
 		double const &m1;
-		Eigen::Vector<double, 8 * N> _residuum;
-		Eigen::Array<bool, 8 * N, 1> _mask;
+		Eigen::Vector<double, 3 * N> _residuum;
+		Eigen::Array<bool, 3 * N, 1> _mask;
 
 	   public:
-		DipolModelFunctor(double const &m1, Eigen::Vector<double, 8 * N> const &residuum, Eigen::Array<bool, 8 * N, 1> const &mask) : Eigen::DenseFunctor<double>(8, 8 * (N - mask.count())), m1(m1), _residuum(residuum), _mask(mask) {}
+		DipolModelFunctor(double const &m1, Eigen::Vector<double, 3 * N> const &residuum, Eigen::Array<bool, 3 * N, 1> const &mask) : Eigen::DenseFunctor<double>(8, mask.count()), m1(m1), _residuum(residuum), _mask(mask) {}
 
-		int operator()(InputType const &x, ValueType &fvec) const {
-			Eigen::Vector<double, 8 * N> f;
-			dipol_model(f.array().data(), nullptr, m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+		int operator()(InputType const &x, ValueType &Fvec) const {
+			Eigen::Vector<double, 3 * N> F;
+			dipol_model(F.array().data(), nullptr, m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
 
+			F -= _residuum;
 
-
-			for (auto const [i, filtered] : std::ranges::views::zip(_mask, f - _residuum) | std::ranges::views::filter([](auto const &filter) { return !std::get<0>(filter); })) {
-				auto [filter, values] = filtered;
-
-				fvec(i) = values;
+			for (auto const [i, j] : std::views::enumerate(std::ranges::views::zip(_mask, std::ranges::views::iota(0)) | std::ranges::views::filter([](auto const &pair) { return std::get<0>(pair); }) |
+			                                               std::ranges::views::transform([](auto const &pair) { return std::get<1>(pair); }))) {
+				Fvec(i) = F(j);
 			}
-
-			fvec -= _residuum;
 
 			return 0;
 		}
 
-		int df(InputType const &x, JacobianType &fjac) const {
-			Eigen::Matrix<double, 8 * N, 8> j;
+		int df(InputType const &x, JacobianType &Fjac) const {
+			Eigen::Matrix<double, 3 * N, 8, Eigen::RowMajor> J;  // Eigen defaults to Column Major
+			dipol_model_jacobian(nullptr, J.array().data(), m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
 
-			dipol_model_jacobian(nullptr, j.array().data(), m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
-
-			for (auto const [i, filtered] : std::ranges::views::zip(_mask, j) | std::ranges::views::filter([](auto const &filter) { return !std::get<0>(filter); })) {
-				auto [filter, values] = filtered;
-
-				fjac(i) = values;
+			for (auto const [i, j] : std::views::enumerate(std::ranges::views::zip(_mask, std::ranges::views::iota(0)) | std::ranges::views::filter([](auto const &pair) { return std::get<0>(pair); }) |
+			                                               std::ranges::views::transform([](auto const &pair) { return std::get<1>(pair); }))) {
+				Fjac.row(i) = J.row(j);
 			}
 
 			return 0;
@@ -65,21 +61,23 @@ class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxD
 	LevenbergMarquardtOptimizer(double m1, double x = 21e-2 / 2, double y = 21e-2 / 2, double z = 15e-2 / 2.) : m1(m1), init({x, y, z, 0, 0, 0, 0, 0}) {}
 
 	Pack<Position, Direction> process(Message<Array<MagneticFluxDensityData, 16>> const &data) override {
-		Eigen::Vector<double, 8 * N> residuum;
+		AfterReturnTimeMeasure measure(data.timestamp);
+
+		Eigen::Vector<double, 3 * N> residuum;
 		for (auto const &[in, out] : std::ranges::views::zip(data, residuum | std::ranges::views::adjacent<3> | std::ranges::views::stride(3))) {
 			auto const &[inx, iny, inz] = in;
 
 			out = std::tie(inx, iny, inz);
 		}
-		Eigen::Array<bool, 8 * N, 1> mask = residuum.array().isNaN();
+
+		Eigen::Array<bool, 3 * N, 1> mask = !residuum.array().isNaN();
 
 		DipolModelFunctor functor(m1, residuum, mask);
 
 		Eigen::LevenbergMarquardt<DipolModelFunctor> lm(functor);
 		Eigen::Vector<double, Eigen::Dynamic> result = init;
-		auto status = lm.minimize(result);
 
-		switch (status) {
+		switch (auto status = lm.minimize(result)) {
 			case Eigen::LevenbergMarquardtSpace::NotStarted: common::println_critical_loc("LevenbergMarquardtSpace::NotStarted"); break;
 			case Eigen::LevenbergMarquardtSpace::Running: common::println_critical_loc("LevenbergMarquardtSpace::Running"); break;
 			case Eigen::LevenbergMarquardtSpace::ImproperInputParameters: common::println_critical_loc("LevenbergMarquardtSpace::ImproperInputParameters"); break;

@@ -1,6 +1,6 @@
 project(data_collection_offline)
 
-add_library(${PROJECT_NAME} src/CSVMagnetometerArrayMagneticFluxDensityDataReader.cpp src/CSVMagnetometerArrayMagneticFluxDensityDataPositionDirectionReader.cpp)
+add_library(${PROJECT_NAME} src/CSVMagnetometerArrayMagneticFluxDensityDataReader.cpp src/CSVMagnetometerArrayMagneticFluxDensityDataPositionDirectionReader.cpp src/MedabilityMagnetometerArrayTransformer.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
 target_link_libraries(${PROJECT_NAME} PUBLIC common)

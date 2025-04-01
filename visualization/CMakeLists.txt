@@ -1,7 +1,10 @@
 project(visualization)
 
-add_library(${PROJECT_NAME} src/MagnetometerArrayMagneticFluxDensityDataPrinter.cpp)
+add_library(${PROJECT_NAME} src/MagnetometerArrayMagneticFluxDensityDataPrinter.cpp src/PositionDirectionPrinter.cpp src/PositionDirectionError.cpp src/PositionDirectionFilePrinter.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC gcov)
+target_link_libraries(${PROJECT_NAME} PUBLIC csv)
 target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

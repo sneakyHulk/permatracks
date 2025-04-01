@@ -14,9 +14,10 @@
 #include "Message.h"
 #include "Pack.h"
 
-template <std::size_t N>
+template <std::size_t N, bool wait = true>
 class CSVMagnetometerArrayMagneticFluxDensityDataReader : public Pusher<Message<Array<MagneticFluxDensityData, N>>> {
 	std::filesystem::path _path;
+	std::string _name;
 
 	std::generator<Message<Array<MagneticFluxDensityData, N>>>* gen;
 	decltype(gen->begin()) it;
@@ -26,9 +27,10 @@ class CSVMagnetometerArrayMagneticFluxDensityDataReader : public Pusher<Message<
 	std::chrono::time_point<std::chrono::system_clock> next;
 
    public:
-	explicit CSVMagnetometerArrayMagneticFluxDensityDataReader(std::filesystem::path&& path) : _path(std::forward<decltype(path)>(path)), gen(new std::generator<Message<Array<MagneticFluxDensityData, N>>>(get(_path))), it(gen->begin()) {}
+	explicit CSVMagnetometerArrayMagneticFluxDensityDataReader(std::filesystem::path&& path, std::string&& name = "LIS3MDL_ARRAY")
+	    : _path(std::forward<decltype(path)>(path)), _name(std::forward<decltype(name)>(name)), gen(new std::generator<Message<Array<MagneticFluxDensityData, N>>>(get(_path, _name))), it(gen->begin()) {}
 
-	static std::generator<Message<Array<MagneticFluxDensityData, N>>> get(std::filesystem::path path) {
+	static std::generator<Message<Array<MagneticFluxDensityData, N>>> get(std::filesystem::path path, std::string name) {
 		csv::CSVReader reader(path.string());
 
 		for (auto const& row : reader) {
@@ -39,6 +41,7 @@ class CSVMagnetometerArrayMagneticFluxDensityDataReader : public Pusher<Message<
 			}
 
 			ret.timestamp = row["timestamp"].get<std::uint32_t>();
+			ret.src = name;
 			co_yield ret;
 		}
 	}
@@ -64,13 +67,18 @@ class CSVMagnetometerArrayMagneticFluxDensityDataReader : public Pusher<Message<
 				next = t_new;
 			}
 
-			std::this_thread::sleep_until(_current_time + (next - _sensor_time));
+			if constexpr (wait) std::this_thread::sleep_until(_current_time + (next - _sensor_time));
+			else std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+			ret.timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 
 			return ret;
 		} else {
 			delete gen;
 
-			gen = new std::generator<Message<Array<MagneticFluxDensityData, N>>>(get(_path));
+			std::this_thread::sleep_for(std::chrono::seconds(5));
+
+			gen = new std::generator<Message<Array<MagneticFluxDensityData, N>>>(get(_path, _name));
 			it = gen->begin();
 
 			return push_once();

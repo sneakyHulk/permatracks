@@ -17,6 +17,11 @@ class NumpyEncoder(json.JSONEncoder):
 def calibrate():
     filepaths = [
         "../../result/LIS3MDL_ARRAY_Besprechungsraum/mag_data_LIS3MDL_ARRAY_mean_2025Mar28_16h45min11s_calibration_pattern.txt"]
+
+    #filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
+    #             "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
+    #             "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
+
     measured_data = collect(filepaths)
     magnets_position_direction_values = collect_position_direction_values(filepaths)
     sensor_position_values = get_sensor_position_values()

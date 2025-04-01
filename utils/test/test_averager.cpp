@@ -1,11 +1,8 @@
 #include <chrono>
 
+#include <Pusher.h>
+#include <RunnerSynchronous.h>
 #include "Averager.h"
-#include "Box.h"
-#include "Direction.h"
-#include "MagneticFluxDensityData.h"
-#include "Pack.h"
-#include "Position.h"
 
 using namespace std::chrono_literals;
 
@@ -15,11 +12,9 @@ class Push1 : public Pusher<int> {
    public:
 	Push1() { std::cout << "Push1()" << std::endl; }
 	int push() final {
-		std::cout << ++i << " push()" << std::endl;
-		return i;
+		return ++i;
 	}
 	int push_once() override {
-		std::cout << ++i << " push_once()" << std::endl;
 		return i;
 	}
 };
@@ -51,6 +46,10 @@ int main() {
 
 	auto t1 = push1();
 	auto t2 = averager1();
+
+	std::this_thread::sleep_for(100ms);
+
+	averager1.average();
 
 	std::this_thread::sleep_for(100ms);
 
