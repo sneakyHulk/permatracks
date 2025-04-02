@@ -61,38 +61,49 @@ def compute_from_position_direction_values(sensor_position_values, magnet_positi
     return computed_data
 
 
-from data_collection.scripts.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
+from data_collection.scripts.collect_medability_sensor_array_data import collect_mag_data_position_direction_values, \
     get_sensor_position_values
+import json
 
 
-def test_calibration():
-    filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
-                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
-                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
 
-    measured_data = collect(filepaths)
-    magnets_position_direction_values = collect_position_direction_values(filepaths)
+
+def update_current_calibration(transforms):
+    transforms = np.where(np.isnan(transforms), None, transforms)
+
+    dictionary = {key: {'transformation': transform} for
+                  key, transform in
+                  zip(["{:02}".format(n) for n in range(len(transforms))], transforms)}
+
+    with open("../../result/current_calibration.json", "w") as outfile:
+        json.dump(dictionary, outfile, cls=NumpyEncoder)
+
+
+def calibrate(filepaths):
+    measured_data, magnets_position_direction_values = collect_mag_data_position_direction_values(filepaths)
     sensor_position_values = get_sensor_position_values()
 
     computed_data = compute_from_position_direction_values(sensor_position_values, magnets_position_direction_values[0])
 
-    for src, dst in zip(measured_data, computed_data):
-        transform = calibrate_using_coordinate_transform(src, dst)
+    transforms = np.array([calibrate_using_coordinate_transform(src, dst) for src, dst in
+                           zip(measured_data, computed_data)])
 
-        for measurement in src:
-            print(np.dot(transform, np.append(measurement, 1)))
-
-    for src, dst in zip(measured_data, computed_data):
-        transform = calibrate_using_coordinate_transform_ransac(src, dst)
-
-        for measurement in src:
-            print(np.dot(transform, np.append(measurement, 1)))
-
-    transforms = [calibrate_using_coordinate_transform(src, dst) for src, dst in
-                  zip(measured_data, computed_data)]
+    update_current_calibration(transforms)
 
     return transforms
 
 
 if __name__ == "__main__":
-    test_calibration()
+    filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
+
+    filepaths = [
+        "../../result/LIS3MDL_ARRAY_Besprechungsraum/2/mag_data_LIS3MDL_ARRAY_mean_2025Apr01_14h38min28s_calibration_pattern.txt"]
+
+    calibrate(filepaths)

@@ -9,6 +9,7 @@
 #include "Array.h"
 #include "Direction.h"
 #include "MagneticFluxDensityData.h"
+#include "Message.h"
 #include "Pack.h"
 #include "Position.h"
 #include "Processor.h"
@@ -36,6 +37,8 @@ class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxD
 
 			F -= _residuum;
 
+			F *= 5e4;  // scale such that F is around 1e0.
+
 			for (auto const [i, j] : std::views::enumerate(std::ranges::views::zip(_mask, std::ranges::views::iota(0)) | std::ranges::views::filter([](auto const &pair) { return std::get<0>(pair); }) |
 			                                               std::ranges::views::transform([](auto const &pair) { return std::get<1>(pair); }))) {
 				Fvec(i) = F(j);
@@ -47,6 +50,8 @@ class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxD
 		int df(InputType const &x, JacobianType &Fjac) const {
 			Eigen::Matrix<double, 3 * N, 8, Eigen::RowMajor> J;  // Eigen defaults to Column Major
 			dipol_model_jacobian(nullptr, J.array().data(), m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+
+			J *= 5e4;  // scale such that J is around 1e0.
 
 			for (auto const [i, j] : std::views::enumerate(std::ranges::views::zip(_mask, std::ranges::views::iota(0)) | std::ranges::views::filter([](auto const &pair) { return std::get<0>(pair); }) |
 			                                               std::ranges::views::transform([](auto const &pair) { return std::get<1>(pair); }))) {
@@ -77,20 +82,24 @@ class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxD
 		Eigen::LevenbergMarquardt<DipolModelFunctor> lm(functor);
 		Eigen::Vector<double, Eigen::Dynamic> result = init;
 
+		lm.setMaxfev(1000000);
+
 		switch (auto status = lm.minimize(result)) {
 			case Eigen::LevenbergMarquardtSpace::NotStarted: common::println_critical_loc("LevenbergMarquardtSpace::NotStarted"); break;
 			case Eigen::LevenbergMarquardtSpace::Running: common::println_critical_loc("LevenbergMarquardtSpace::Running"); break;
 			case Eigen::LevenbergMarquardtSpace::ImproperInputParameters: common::println_critical_loc("LevenbergMarquardtSpace::ImproperInputParameters"); break;
-			case Eigen::LevenbergMarquardtSpace::RelativeReductionTooSmall:
+			case Eigen::LevenbergMarquardtSpace::RelativeReductionTooSmall: common::println_warn_loc("LevenbergMarquardtSpace::RelativeReductionTooSmall"); break;
+			case Eigen::LevenbergMarquardtSpace::RelativeErrorAndReductionTooSmall: common::println_warn_loc("LevenbergMarquardtSpace::RelativeErrorAndReductionTooSmall"); break;
+			case Eigen::LevenbergMarquardtSpace::CosinusTooSmall: common::println_warn_loc("LevenbergMarquardtSpace::CosinusTooSmall"); break;
+			case Eigen::LevenbergMarquardtSpace::TooManyFunctionEvaluation: common::println_warn_loc("LevenbergMarquardtSpace::TooManyFunctionEvaluation"); break;
+			case Eigen::LevenbergMarquardtSpace::FtolTooSmall: common::println_warn_loc("LevenbergMarquardtSpace::FtolTooSmall"); break;
+			case Eigen::LevenbergMarquardtSpace::XtolTooSmall: common::println_warn_loc("LevenbergMarquardtSpace::XtolTooSmall"); break;
+			case Eigen::LevenbergMarquardtSpace::GtolTooSmall: common::println_warn_loc("LevenbergMarquardtSpace::GtolTooSmall"); break;
+			case Eigen::LevenbergMarquardtSpace::UserAsked: common::println_warn_loc("LevenbergMarquardtSpace::UserAsked"); break;
 			case Eigen::LevenbergMarquardtSpace::RelativeErrorTooSmall:
-			case Eigen::LevenbergMarquardtSpace::RelativeErrorAndReductionTooSmall:
-			case Eigen::LevenbergMarquardtSpace::CosinusTooSmall:
-			case Eigen::LevenbergMarquardtSpace::TooManyFunctionEvaluation:
-			case Eigen::LevenbergMarquardtSpace::FtolTooSmall:
-			case Eigen::LevenbergMarquardtSpace::XtolTooSmall:
-			case Eigen::LevenbergMarquardtSpace::GtolTooSmall:
-			case Eigen::LevenbergMarquardtSpace::UserAsked:
-			default: return {result(0), result(1), result(2), result(3), result(4)};
+			default: break;
 		}
+
+		return {result(0), result(1), result(2), result(3), result(4)};
 	}
 };

@@ -18,6 +18,7 @@ def plot_optimization_error():
     ax.legend(["x", "y", "z"])
     ax.set_title("Optimization error")
     ax.set_xlabel("Iteration")
+    ax.set_ylim(-0.05, 0.05)
     ax.set_ylabel("Position error [m]")
 
     plt.show()

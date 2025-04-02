@@ -89,6 +89,10 @@ def get_sensor_position_values(rows=4, columns=4, stride=30e-3, start=(40e-3, 45
                      itertools.product(range(rows), range(columns))])
 
 
+def collect_mag_data_position_direction_values(filepaths):
+    return collect(filepaths), collect_position_direction_values(filepaths)
+
+
 if __name__ == '__main__':
     filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
                  "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",

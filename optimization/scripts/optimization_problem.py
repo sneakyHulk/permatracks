@@ -69,14 +69,12 @@ def optimize_least_squares_levenberg_marquardt(F, symbols, B):
     return res.x
 
 
-from calibration.scripts.calibration import compute_from_position_direction_values, \
-    calibrate_using_coordinate_transform_ransac, \
-    calibrate_using_coordinate_transform, test_calibration
+from calibration.scripts.calibration import compute_from_position_direction_values, calibrate
 from optimization.scripts.models import dipol_model
 from data_collection.scripts.collect_medability_sensor_array_data import collect, collect_position_direction_values, \
     get_sensor_position_values
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 
 def test_optimization1():
     sensor_position_values = get_sensor_position_values()
@@ -89,14 +87,13 @@ def test_optimization1():
     optimize_least_squares_levenberg_marquardt(model, symbols, B.flatten())
 
 
-def test_optimization2():
+def optimize(filepaths_calibration, filepaths_ground_truth):
     sensor_position_values = get_sensor_position_values()
     model, symbols = dipol_model(sensor_position_values)
 
-    transforms = test_calibration()
+    transforms = calibrate(filepaths_calibration)
 
-    measurements_for_each_sensor = collect(
-        ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])
+    measurements_for_each_sensor = collect(filepaths_ground_truth)
 
     transformed_measurements_for_each_sensor = np.array(
         [[np.dot(transform, np.append(measurement, 1))[0:3] for measurement in measurements_for_one_sensor] for
@@ -107,19 +104,19 @@ def test_optimization2():
         [optimize_least_squares_levenberg_marquardt(model, symbols,
                                                     transformed_sensor_data_for_one_measurement.flatten())
          for transformed_sensor_data_for_one_measurement in
-         transformed_sensor_data_for_each_measurement])
+         tqdm(transformed_sensor_data_for_each_measurement)])
 
-    ground_truth_positions_direction_values = collect_position_direction_values(
-        ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"])[0]
+    ground_truth_positions_direction_values = collect_position_direction_values(filepaths_ground_truth)[0]
 
     print(optimized_positions_direction_values[:, 3:8])
 
     err = np.abs(optimized_positions_direction_values[:, 0:3] - ground_truth_positions_direction_values[:, 0:3])
 
     fig, ax = plt.subplots()
-    ax.plot(np.linspace(1, 10, 10), err[:, 0] * 1e3)
-    ax.plot(np.linspace(1, 10, 10), err[:, 1] * 1e3)
-    ax.plot(np.linspace(1, 10, 10), err[:, 2] * 1e3)
+    ax.plot(err[:, 0] * 1e3)
+    ax.plot(err[:, 1] * 1e3)
+    ax.plot(err[:, 2] * 1e3)
+    ax.set_ylim(0, 5)
     ax.legend(["x", "y", "z"])
     ax.set_title("Position error in x, y and z direction")
     ax.set_xlabel("Measurements")
@@ -128,5 +125,14 @@ def test_optimization2():
 
 
 if __name__ == '__main__':
-    test_optimization2()
-    test_optimization1()
+    filepaths = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h26min51s_calibration_x.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h39min41s_calibration_y.txt",
+                 "../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h45min44s_calibration_z.txt"]
+    ground_truth = ["../../result/mag_data_LIS3MDL_ARRAY_mean_2025Mar14_15h32min12s_(1-10_3).txt"]
+
+    filepaths = [
+        "../../result/LIS3MDL_ARRAY_Besprechungsraum/2/mag_data_LIS3MDL_ARRAY_mean_2025Apr01_14h38min28s_calibration_pattern.txt"]
+    ground_truth = [
+        "../../result/LIS3MDL_ARRAY_Besprechungsraum/2/mag_data_LIS3MDL_ARRAY_2025Apr01_14h42min53s_ground_truth_data.txt"]
+
+    optimize(filepaths, ground_truth)
