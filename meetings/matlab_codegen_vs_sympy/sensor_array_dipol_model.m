@@ -44,11 +44,11 @@ end
 model = [Bi1x, Bi1y, Bi1z];
 
 
-model_jac = jacobian(model, [Gx Gy Gz x1 y1 z1 theta1 phi1]);
+model_jacobian = jacobian(model, [Gx Gy Gz x1 y1 z1 theta1 phi1]);
 
-matlabFunction(model, 'file', 'myFunction');
-codegen -config:lib myFunction -args {0, 0, 0, 0, 0, 0, 0, 0, 0} -c
+matlabFunction(model, 'file', 'model');
+codegen -config:lib model -args {0, 0, 0, 0, 0, 0, 0, 0, 0} -c
 
-matlabFunction(model_jac, 'file', 'myFunction2');
-codegen -config:lib myFunction2 -args {0, 0, 0, 0, 0, 0} -c
+matlabFunction(model_jacobian, 'file', 'model_jacobian');
+codegen -config:lib model_jacobian -args {0, 0, 0, 0, 0, 0} -c
 

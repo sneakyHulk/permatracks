@@ -7,6 +7,8 @@ add_subdirectory(thirdparty/common)
 add_subdirectory(thirdparty/concurra)
 add_subdirectory(thirdparty/matplotlibcpp17)
 add_subdirectory(thirdparty/csv-parser)
+set(BENCHMARK_ENABLE_TESTING off)
+add_subdirectory(thirdparty/benchmark)
 
 add_library(serial thirdparty/serial/src/serial.cc thirdparty/serial/src/impl/unix.cc thirdparty/serial/src/impl/win.cc)
 target_include_directories(serial PUBLIC thirdparty/serial/include)
@@ -33,6 +35,7 @@ add_subdirectory(optimization)
 add_subdirectory(data_collection)
 add_subdirectory(visualization)
 add_subdirectory(utils)
+add_subdirectory(meetings/matlab_codegen_vs_sympy)
 
 
 project(grab_mag_data)
