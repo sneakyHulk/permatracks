@@ -32,12 +32,12 @@ def optimize_particle_swarm(F, symbols, B):
                                         options=options,
                                         bounds=constraints)
 
-    cost, x = optimizer.optimize(objective_function, iters=2000)
+    cost, x = optimizer.optimize(objective_function, iters=20, verbose=False)
 
     return x
 
 
-def optimize_least_squares_levenberg_marquardt(F, symbols, B):
+def optimize_least_squares_levenberg_marquardt(F, symbols, B, init=[210e-3 / 2, 210e-3 / 2, 15e-2 / 2, 0, 0, 0, 0, 0]):
     H = 4e-3
     R = 3e-3
     m = 1.35 / 4 * H * R ** 2
@@ -63,7 +63,7 @@ def optimize_least_squares_levenberg_marquardt(F, symbols, B):
         return np.transpose(lam_J(*X))
 
     res = scipy.optimize.least_squares(objective_function,
-                                       [210e-3 / 2, 210e-3 / 2, 15e-2 / 2, 0, 0, 0, 0, 0],
+                                       init,
                                        method='lm', jac=objective_function_jacobian, args=(B,))
 
     return res.x
@@ -75,6 +75,7 @@ from data_collection.scripts.collect_medability_sensor_array_data import collect
     get_sensor_position_values
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+
 
 def test_optimization1():
     sensor_position_values = get_sensor_position_values()
@@ -101,26 +102,29 @@ def optimize(filepaths_calibration, filepaths_ground_truth):
     transformed_sensor_data_for_each_measurement = np.swapaxes(transformed_measurements_for_each_sensor, 0, 1)
 
     optimized_positions_direction_values = np.array(
-        [optimize_least_squares_levenberg_marquardt(model, symbols,
-                                                    transformed_sensor_data_for_one_measurement.flatten())
+        [optimize_particle_swarm(model, symbols,
+                                 transformed_sensor_data_for_one_measurement.flatten())
          for transformed_sensor_data_for_one_measurement in
          tqdm(transformed_sensor_data_for_each_measurement)])
+
+    optimized_positions_direction_values = np.array(
+        [optimize_least_squares_levenberg_marquardt(model, symbols,
+                                                    transformed_sensor_data_for_one_measurement.flatten(),
+                                                    optimized_positions_direction_value)
+         for optimized_positions_direction_value, transformed_sensor_data_for_one_measurement in
+         tqdm(zip(optimized_positions_direction_values, transformed_sensor_data_for_each_measurement))])
 
     ground_truth_positions_direction_values = collect_position_direction_values(filepaths_ground_truth)[0]
 
     print(optimized_positions_direction_values[:, 3:8])
 
-    err = np.abs(optimized_positions_direction_values[:, 0:3] - ground_truth_positions_direction_values[:, 0:3])
-
     fig, ax = plt.subplots()
-    ax.plot(err[:, 0] * 1e3)
-    ax.plot(err[:, 1] * 1e3)
-    ax.plot(err[:, 2] * 1e3)
-    ax.set_ylim(0, 5)
+    ax.plot(optimized_positions_direction_values[:, 0:3] - ground_truth_positions_direction_values[:, 0:3])
     ax.legend(["x", "y", "z"])
-    ax.set_title("Position error in x, y and z direction")
-    ax.set_xlabel("Measurements")
-    ax.set_ylabel("Measurement error [mm]")
+    ax.set_title("Optimization error")
+    ax.set_xlabel("Iteration")
+    ax.set_ylim(-0.05, 0.05)
+    ax.set_ylabel("Position error [m]")
     plt.show()
 
 

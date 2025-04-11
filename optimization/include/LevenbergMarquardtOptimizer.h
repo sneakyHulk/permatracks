@@ -14,9 +14,7 @@
 #include "Position.h"
 #include "Processor.h"
 
-extern "C" {
-#include <sensor_array_dipol_model.h>
-}
+#include <dipol_model.h>
 
 template <std::size_t N>
 class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxDensityData, N>>, Pack<Position, Direction>> {
@@ -33,7 +31,7 @@ class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxD
 
 		int operator()(InputType const &x, ValueType &Fvec) const {
 			Eigen::Vector<double, 3 * N> F;
-			dipol_model(F.array().data(), nullptr, m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+			dipol_model(F.array().data(), m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
 
 			F -= _residuum;
 
@@ -49,7 +47,7 @@ class LevenbergMarquardtOptimizer : public Processor<Message<Array<MagneticFluxD
 
 		int df(InputType const &x, JacobianType &Fjac) const {
 			Eigen::Matrix<double, 3 * N, 8, Eigen::RowMajor> J;  // Eigen defaults to Column Major
-			dipol_model_jacobian(nullptr, J.array().data(), m1, x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7));
+			dipol_model_jacobian(J.array().data(), m1, x(0), x(1), x(2), x(3), x(4));
 
 			J *= 5e4;  // scale such that J is around 1e0.
 

@@ -10,8 +10,8 @@
 #ifndef SENSORARRAYDIPOLMODEL__SENSOR_ARRAY_DIPOL_MODEL__H
 #define SENSORARRAYDIPOLMODEL__SENSOR_ARRAY_DIPOL_MODEL__H
 
-void dipol_model(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz);
-void dipol_model_jacobian(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz);
+void sensor_array_dipol_model(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz);
+void sensor_array_dipol_model_jacobian(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz);
 
 #endif
 

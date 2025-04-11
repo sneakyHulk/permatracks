@@ -8,7 +8,7 @@
 #include "sensor_array_dipol_model.h"
 #include <math.h>
 
-void dipol_model(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz) {
+void sensor_array_dipol_model(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz) {
 
    B[0] = Gx + m1*((3*x1 - 0.12)*(z1*cos(theta1) + (x1 - 0.040000000000000001)*sin(theta1)*cos(phi1) + (y1 - 0.044999999999999998)*sin(phi1)*sin(theta1))/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 5.0/2.0) - sin(theta1)*cos(phi1)/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 3.0/2.0));
    B[1] = Gy + m1*((3*y1 - 0.13500000000000001)*(z1*cos(theta1) + (x1 - 0.040000000000000001)*sin(theta1)*cos(phi1) + (y1 - 0.044999999999999998)*sin(phi1)*sin(theta1))/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 5.0/2.0) - sin(phi1)*sin(theta1)/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 3.0/2.0));
@@ -61,7 +61,7 @@ void dipol_model(double *B, double *BB, double m1, double x1, double y1, double 
 
 }
 
-void dipol_model_jacobian(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz) {
+void sensor_array_dipol_model_jacobian(double *B, double *BB, double m1, double x1, double y1, double z1, double theta1, double phi1, double Gx, double Gy, double Gz) {
 
    BB[0] = m1*(-(0.12 - 3*x1)*sin(theta1)*cos(phi1)/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 5.0/2.0) + (0.20000000000000001 - 5*x1)*(3*x1 - 0.12)*(z1*cos(theta1) + (x1 - 0.040000000000000001)*sin(theta1)*cos(phi1) + (y1 - 0.044999999999999998)*sin(phi1)*sin(theta1))/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 7.0/2.0) + (3*x1 - 0.12)*sin(theta1)*cos(phi1)/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 5.0/2.0) + 3*(z1*cos(theta1) + (x1 - 0.040000000000000001)*sin(theta1)*cos(phi1) + (y1 - 0.044999999999999998)*sin(phi1)*sin(theta1))/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 5.0/2.0));
    BB[1] = m1*(-(0.13500000000000001 - 3*y1)*sin(theta1)*cos(phi1)/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 5.0/2.0) + (0.22499999999999998 - 5*y1)*(3*x1 - 0.12)*(z1*cos(theta1) + (x1 - 0.040000000000000001)*sin(theta1)*cos(phi1) + (y1 - 0.044999999999999998)*sin(phi1)*sin(theta1))/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 7.0/2.0) + (3*x1 - 0.12)*sin(phi1)*sin(theta1)/pow(pow(z1, 2) + pow(x1 - 0.040000000000000001, 2) + pow(y1 - 0.044999999999999998, 2), 5.0/2.0));

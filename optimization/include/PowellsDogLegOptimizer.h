@@ -14,9 +14,8 @@
 #include "Position.h"
 #include "Processor.h"
 
-extern "C" {
-#include <sensor_array_dipol_model.h>
-}
+#include <dipol_model.h>
+
 
 template <std::size_t N>
 class PowellsDogLegOptimizer : public Processor<Message<Array<MagneticFluxDensityData, N>>, Pack<Position, Direction>> {

@@ -1,6 +1,6 @@
 project(optimization)
 
-add_library(${PROJECT_NAME} src/sensor_array_dipol_model.c src/LevenbergMarquardtOptimizer.cpp src/PowellsDogLegOptimizer.cpp)
+add_library(${PROJECT_NAME} src/dipol_model.cpp src/LevenbergMarquardtOptimizer.cpp src/MultiStartLevenbergMarquardtOptimizer.cpp src/PowellsDogLegOptimizer.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
 target_link_libraries(${PROJECT_NAME} PUBLIC concurra)

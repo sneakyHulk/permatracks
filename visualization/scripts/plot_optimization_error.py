@@ -14,7 +14,7 @@ def plot_optimization_error():
                       float(row["mag_phi0"]) - float(row["computed_mag_phi0"])]) for row in csvreader])
 
     fig, ax = plt.subplots()
-    ax.plot(absolute_errors[42:, 0:3])
+    ax.plot(absolute_errors[:, 0:3])
     ax.legend(["x", "y", "z"])
     ax.set_title("Optimization error")
     ax.set_xlabel("Iteration")
@@ -25,7 +25,7 @@ def plot_optimization_error():
 
 
 def plot_optimization_time():
-    with open('../../result/LevenbergMarquardtOptimizer.csv') as csvfile:
+    with open('../../result/MultiStartLevenbergMarquardtOptimizer.csv') as csvfile:
         csvreader = csv.DictReader(csvfile, delimiter=',')
         time_taken = np.array([float(row["t"]) for row in csvreader])
 

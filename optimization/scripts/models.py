@@ -50,7 +50,7 @@ def dipol_model(sensor_position_direction_values):
         model = model + [Bx, By, Bz]
 
     # model = Bi1x + Bi1y + Bi1z
-    symbols = {'x1': x1, 'y1': y1, 'z1': z1, 'm1': m1, 'theta1': theta1, 'phi1': phi1, 'Gx': Gx, 'Gy': Gy, 'Gz': Gz}
+    symbols = {'m1': m1, 'x1': x1, 'y1': y1, 'z1': z1, 'theta1': theta1, 'phi1': phi1, 'Gx': Gx, 'Gy': Gy, 'Gz': Gz}
 
     return model, symbols
 
